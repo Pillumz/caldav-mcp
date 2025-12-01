@@ -1,19 +1,33 @@
-import { CalDAVClient } from "ts-caldav"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import type { CalDAVAccount } from "../index.js"
 
 export async function registerListCalendars(
-  client: CalDAVClient,
+  accounts: CalDAVAccount[],
   server: McpServer,
 ) {
-  const calendars = await client.getCalendars()
+  // Use pre-fetched calendars from accounts
+  const allCalendars: Array<{ account: string; name: string; url: string }> = []
+
+  for (const account of accounts) {
+    for (const cal of account.calendars) {
+      allCalendars.push({
+        account: account.name,
+        name: cal.name,
+        url: cal.url,
+      })
+    }
+  }
 
   server.tool(
     "list-calendars",
-    "List all calendars returning both name and URL",
+    "List all calendars from all configured accounts, returning account name, calendar name, and URL",
     {},
     async () => {
-      const data = calendars.map((c) => ({ name: c.displayName, url: c.url }))
-      return { content: [{ type: "text", text: JSON.stringify(data) }] }
+      return {
+        content: [
+          { type: "text", text: JSON.stringify(allCalendars, null, 2) },
+        ],
+      }
     },
   )
 }

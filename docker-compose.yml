@@ -1,0 +1,11 @@
+services:
+  caldav-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: caldav-mcp
+    env_file:
+      - .env
+    ports:
+      - "127.0.0.1:8082:8000"
+    restart: unless-stopped

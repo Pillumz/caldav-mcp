@@ -1,6 +1,7 @@
-import { CalDAVClient, RecurrenceRule } from "ts-caldav"
+import { RecurrenceRule } from "ts-caldav"
 import { z } from "zod"
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import type { CalDAVAccount } from "../index.js"
 
 const recurrenceRuleSchema = z.object({
   freq: z.enum(["DAILY", "WEEKLY", "MONTHLY", "YEARLY"]).optional(),
@@ -12,7 +13,19 @@ const recurrenceRuleSchema = z.object({
   bymonth: z.array(z.number()).optional(),
 })
 
-export function registerCreateEvent(client: CalDAVClient, server: McpServer) {
+function findAccountForCalendarUrl(
+  accounts: CalDAVAccount[],
+  calendarUrl: string,
+): CalDAVAccount | undefined {
+  return accounts.find((account) =>
+    account.calendars.some((c) => c.url === calendarUrl),
+  )
+}
+
+export function registerCreateEvent(
+  accounts: CalDAVAccount[],
+  server: McpServer,
+) {
   server.tool(
     "create-event",
     "Creates an event in the calendar specified by its URL",
@@ -24,14 +37,51 @@ export function registerCreateEvent(client: CalDAVClient, server: McpServer) {
       recurrenceRule: recurrenceRuleSchema.optional(),
     },
     async ({ calendarUrl, summary, start, end, recurrenceRule }) => {
-      const event = await client.createEvent(calendarUrl, {
-        summary: summary,
-        start: new Date(start),
-        end: new Date(end),
-        recurrenceRule: recurrenceRule as RecurrenceRule,
-      })
-      return {
-        content: [{ type: "text", text: event.uid }],
+      console.log(
+        `[create-event] Request: calendar="${calendarUrl}", summary="${summary}", start="${start}", end="${end}"`,
+      )
+      if (recurrenceRule) {
+        console.log(`[create-event] Recurrence rule:`, recurrenceRule)
+      }
+
+      const account = findAccountForCalendarUrl(accounts, calendarUrl)
+      if (!account) {
+        console.log(`[create-event] ERROR: No account found for calendar URL`)
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error: No account found for calendar URL: ${calendarUrl}`,
+            },
+          ],
+          isError: true,
+        }
+      }
+
+      console.log(`[create-event] Found account: ${account.name}`)
+
+      try {
+        const event = await account.client.createEvent(calendarUrl, {
+          summary: summary,
+          start: new Date(start),
+          end: new Date(end),
+          recurrenceRule: recurrenceRule as RecurrenceRule,
+        })
+        console.log(`[create-event] Created event with UID: ${event.uid}`)
+        return {
+          content: [{ type: "text", text: event.uid }],
+        }
+      } catch (error) {
+        console.log(`[create-event] ERROR:`, error)
+        return {
+          content: [
+            {
+              type: "text",
+              text: `Error creating event: ${error instanceof Error ? error.message : String(error)}`,
+            },
+          ],
+          isError: true,
+        }
       }
     },
   )
