@@ -50,7 +50,7 @@ def create_mcp_server() -> FastMCP:
     Returns:
         Configured FastMCP server instance
     """
-    mcp = FastMCP("caldav-mcp", version="1.0.0")
+    mcp = FastMCP("caldav-mcp")
 
     @mcp.tool(description="List all calendars from all configured accounts")
     async def list_calendars() -> list[dict[str, Any]]:

@@ -43,12 +43,12 @@ async def run_http(host: str = "127.0.0.1", port: int = 9081):
 
     mcp = create_mcp_server()
 
-    # Configure FastMCP for SSE transport
+    # Configure host/port via settings
     mcp.settings.host = host
     mcp.settings.port = port
 
     # Run with SSE transport
-    await mcp.run()
+    await mcp.run_sse_async()
 
 
 def main():
