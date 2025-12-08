@@ -1,0 +1,16 @@
+[Unit]
+Description=caldav-mcp MCP Server
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/mcp/caldav-mcp
+EnvironmentFile=/opt/mcp/caldav-mcp/.env
+ExecStart=/opt/mcp/caldav-mcp/.venv/bin/python -m caldav_mcp http --port 9081
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
