@@ -29,7 +29,7 @@ async def run_stdio():
     logger.info("Starting CalDAV MCP server in stdio mode")
 
     mcp = create_mcp_server()
-    await mcp.run(transport="stdio")
+    await mcp.run_stdio_async()
 
 
 async def run_http(host: str = "127.0.0.1", port: int = 9081):

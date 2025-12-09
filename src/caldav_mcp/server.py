@@ -5,6 +5,7 @@ import logging
 from typing import Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 from .client import CalDAVAccount
 from .config import Settings
@@ -15,6 +16,26 @@ logger = logging.getLogger(__name__)
 
 # Global accounts list (initialized in setup)
 _accounts: list[CalDAVAccount] = []
+
+# Transport security settings for external access
+_transport_security = TransportSecuritySettings(
+    enable_dns_rebinding_protection=True,
+    allowed_hosts=[
+        "127.0.0.1:*",
+        "localhost:*",
+        "[::1]:*",
+        "codex-agent.duckdns.org",
+        "codex-agent.duckdns.org:*",
+        "5mlt.l.time4vps.cloud:*",
+    ],
+    allowed_origins=[
+        "http://127.0.0.1:*",
+        "http://localhost:*",
+        "http://[::1]:*",
+        "https://codex-agent.duckdns.org",
+        "https://5mlt.l.time4vps.cloud:*",
+    ],
+)
 
 
 async def initialize_accounts() -> list[CalDAVAccount]:
@@ -50,7 +71,7 @@ def create_mcp_server() -> FastMCP:
     Returns:
         Configured FastMCP server instance
     """
-    mcp = FastMCP("caldav-mcp")
+    mcp = FastMCP("caldav-mcp", transport_security=_transport_security)
 
     @mcp.tool(description="List all calendars from all configured accounts")
     async def list_calendars() -> list[dict[str, Any]]:
